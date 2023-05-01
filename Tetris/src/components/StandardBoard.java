@@ -6,8 +6,9 @@ import pieces.Piece;
 import java.util.Arrays;
 
 public class StandardBoard implements Board {
+    private static final int MAX_NUM_OF_PIECE_ROTATIONS = 4;
     private final boolean [][] m_cells;
-    private final Position m_startingPosition;
+    private Position m_startingPosition;
     private int m_rowsFinished = 0;
     public StandardBoard(final int rows, final int columns) {
         m_cells = new boolean[rows][columns];
@@ -23,29 +24,36 @@ public class StandardBoard implements Board {
     }
 
     public boolean addPiece(Piece piece) {
-        if (piece.getCenterPosition() == null) {
-            piece = new BasicPiece.BasicPieceBuilder(piece.positions()).center(m_startingPosition).Build();
+        Piece newPiece = piece;
+        if (newPiece.getCenterPosition() == null) {
+            m_startingPosition = new Position(0, m_cells[0].length / 2 - 1);
+            newPiece = new BasicPiece.BasicPieceBuilder(piece.positions()).center(m_startingPosition).Build();
         }
-        for (Position position : piece.positions()) {
+        for (Position position : newPiece.positions()) {
             if (m_cells[position.row()][position.col()]) {
+                System.out.println("Position occupied : " + position.toString());
                 return false;
             }
             m_cells[position.row()][position.col()] = true;
         }
+        piece.setCenterPosition(newPiece.getCenterPosition());
         return true;
     }
 
     @Override
     public boolean rotate(final Piece piece) {
         removePiece(piece);
-        var rotatedPiece = piece;
-        rotatedPiece.rotate();
-        for (Position position : rotatedPiece.positions()) {
-            if (position.col() < 0 || position.col() >= m_cells[0].length || position.row() < 0 || position.row() >= m_cells.length) {
+        piece.rotate();
+        for (Position position : piece.positions()) {
+            if (position.col() < 0 || position.col() >= m_cells[0].length || position.row() < 0 || position.row() >= m_cells.length || m_cells[position.row()][position.col()]) {
+                for (int i = 1 ; i < MAX_NUM_OF_PIECE_ROTATIONS ; ++i) {
+                    piece.rotate();
+                }
+                this.addPiece(piece);
                 return false;
             }
         }
-        this.addPiece(rotatedPiece);
+        this.addPiece(piece);
         return true;
     }
 
@@ -97,11 +105,13 @@ public class StandardBoard implements Board {
             int j;
             for (j = 0 ; j < m_cells[0].length ; ++j) {
                 if (!m_cells[i][j]) {
-                    return;
+                    break;
                 }
             }
-            cleanRow(i);
-            ++ m_rowsFinished;
+            if (j == m_cells[0].length) {
+                cleanRow(i);
+                ++ m_rowsFinished;
+            }
         }
     }
     private void cleanRow(final int rowToDelete) {
@@ -113,8 +123,8 @@ public class StandardBoard implements Board {
         Arrays.fill(m_cells[rowToDelete], false);
     }
     private void updateBoard(final int rowToDelete) {
-        for (int i = rowToDelete ; i >= 0 ; --i) {
-            System.arraycopy(m_cells[i], 0, m_cells[i - 1], 0, m_cells[rowToDelete].length);
+        for (int i = rowToDelete ; i > 0 ; --i) {
+            System.arraycopy(m_cells[i - 1], 0, m_cells[i], 0, m_cells[rowToDelete].length);
         }
     }
 }

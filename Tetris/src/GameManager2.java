@@ -1,7 +1,7 @@
 import components.StandardBoard;
-import gui.GamePanel;
 import gui2.GameFrame2;
 import gui2.GamePanel2;
+import piece_factory.*;
 import pieces.*;
 
 import javax.swing.*;
@@ -11,23 +11,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameManager2 {
-    private final static List<Piece> STANDARD_GAME_PIECES = new ArrayList<>();
-    static {
-        STANDARD_GAME_PIECES.add(new T_shape());
-        STANDARD_GAME_PIECES.add(new I_shape());
-        STANDARD_GAME_PIECES.add(new L_shape());
-        STANDARD_GAME_PIECES.add(new J_shape());
-        STANDARD_GAME_PIECES.add(new S_shape());
-        STANDARD_GAME_PIECES.add(new Z_shape());
-        STANDARD_GAME_PIECES.add(new O_shape());
-    }
     private static final int PIXELS_PER_SQUARE = 20;
+    private static final PieceFactory m_pieceFactory = new PieceFactory();
+    static {
+        m_pieceFactory.register(0, new I_shapeCreator());
+        m_pieceFactory.register(1, new O_shapeCreator());
+        m_pieceFactory.register(2, new T_shapeCreator());
+        m_pieceFactory.register(3, new L_shapeCreator());
+        m_pieceFactory.register(4, new J_shapeCreator());
+        m_pieceFactory.register(5, new S_shapeCreator());
+        m_pieceFactory.register(6, new Z_shapeCreator());
+    }
     private final GameFrame2 m_gameFrame;
     private final GamePanel2 m_gamePanel;
     private final GamePanel2 m_nextPiecePanel;
     private Piece m_currentPiece;
-    private Piece m_nextPiece;
-    private int m_moveTime = 1000;
+    private int m_nextPieceIdx;
+    private final int m_moveTime = 1000;
     public GameManager2() {
         m_gameFrame = new GameFrame2();
 
@@ -42,9 +42,10 @@ public class GameManager2 {
         var nextPieceBoard = new StandardBoard(4, 8);
         m_nextPiecePanel = new GamePanel2(nextPieceBoard, PIXELS_PER_SQUARE);
         m_nextPiecePanel.setBounds(m_gamePanel.getWidth() + 20, 10, 8 * PIXELS_PER_SQUARE, 4 * PIXELS_PER_SQUARE);
-        m_nextPiece = generateNextPiece();
-        m_nextPiecePanel.addPiece(m_nextPiece);
-        m_nextPiecePanel.moveDown(m_nextPiece);
+        m_nextPieceIdx = new SecureRandom().nextInt(0, StandardPieces.values().length - 1);
+        var nextPiece = m_pieceFactory.create(m_nextPieceIdx);
+        m_nextPiecePanel.addPiece(nextPiece);
+        m_nextPiecePanel.moveDown(nextPiece);
         m_nextPiecePanel.drawBoard();
         m_nextPiecePanel.setVisible(true);
 
@@ -72,7 +73,7 @@ public class GameManager2 {
         boolean isThereStillRoom = true;
         while (isThereStillRoom) {
             try {
-                Thread.sleep(m_moveTime);
+                Thread.sleep(m_gamePanel.getFinishedRows() / 10 >= 9 ? 50 : m_moveTime - (m_gamePanel.getFinishedRows() / 10) * 100);
             }
             catch (InterruptedException e) {
                 System.out.println("Unable to stop executing thread.");
@@ -85,23 +86,27 @@ public class GameManager2 {
                 m_gamePanel.repaint();
             }
             else {
-                m_currentPiece = STANDARD_GAME_PIECES.get(STANDARD_GAME_PIECES.indexOf(m_nextPiece));
+                System.out.println("\nPiece has reached bottom");
+                m_gamePanel.removeFinishedRows();
+                m_currentPiece = m_pieceFactory.create(m_nextPieceIdx);
+                System.out.println("New piece dispatched : " + m_currentPiece.getClass().getName());
+                m_nextPieceIdx = new SecureRandom().nextInt(0, StandardPieces.values().length - 1);
                 isThereStillRoom = m_gamePanel.addPiece(m_currentPiece);
                 m_gamePanel.repaint();
-
-                m_nextPiecePanel.removeAll();
-                m_nextPiece = generateNextPiece();
-                m_nextPiecePanel.addPiece(m_nextPiece);
-                m_nextPiecePanel.moveDown(m_nextPiece);
-                m_nextPiecePanel.repaint();
+//                m_nextPiecePanel.removeAll();
+//                m_nextPiece = generateNextPiece();
+//                m_nextPiecePanel.addPiece(m_nextPiece);
+//                m_nextPiecePanel.moveDown(m_nextPiece);
+//                m_nextPiecePanel.repaint();
             }
         }
         System.out.println("Game Over :(");
     }
     private Piece generateNextPiece() {
         var rand = new SecureRandom();
-        var nextPieceIdx = rand.nextInt(0, STANDARD_GAME_PIECES.size() - 1);
-        return STANDARD_GAME_PIECES.get(nextPieceIdx);
+        var nextPieceIdx = rand.nextInt(0, StandardPieces.values().length - 1);
+        var nextPiece = m_pieceFactory.create(nextPieceIdx);
+        return nextPiece;
     }
     public class DownAction extends AbstractAction {
         @Override

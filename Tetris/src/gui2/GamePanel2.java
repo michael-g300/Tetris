@@ -38,7 +38,7 @@ public class GamePanel2 extends JPanel {
     public boolean canPieceMoveDown(final Piece piece) {
         m_board.removePiece(piece);
         for (Position position : piece.positions()) {
-            if (m_board.getCells()[position.row()][position.col()] || position.row() >= m_board.getCells().length - 1) {
+            if (position.row() >= m_board.getCells().length - 1 || m_board.getCells()[position.row() + 1][position.col()]) {
                 m_board.addPiece(piece);
                 return false;
             }
@@ -46,11 +46,17 @@ public class GamePanel2 extends JPanel {
         m_board.addPiece(piece);
         return true;
     }
+    public int getFinishedRows() {
+        return m_board.getFinishedRows();
+    }
     public boolean addPiece(final Piece piece) {
         return m_board.addPiece(piece);
     }
     public void removePiece(final Piece piece) {
         m_board.removePiece(piece);
+    }
+    public void removeFinishedRows() {
+        m_board.checkFinishedRows();
     }
     public boolean moveRight(final Piece piece) {
         var move = m_board.moveRight(piece);

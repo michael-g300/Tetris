@@ -23,10 +23,6 @@ public class BasicPiece implements Piece {
                 piecePositions.add(position);
             }
         }
-        for (Position position : piecePositions) {
-            System.out.println(position.toString());
-        }
-        System.out.println();
         return piecePositions;
     }
 

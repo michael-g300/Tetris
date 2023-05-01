@@ -1,6 +1,6 @@
 
 public class Main {
     public static void main(String[] args) {
-        GameManager gameManager2 = new GameManager();
+        GameManager2 gameManager2 = new GameManager2();
     }
 }
