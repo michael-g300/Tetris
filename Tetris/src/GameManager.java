@@ -1,34 +1,37 @@
+import components.Position;
 import components.StandardBoard;
 import gui.GameFrame;
 import gui.GamePanel;
+import gui.ScorePanel;
+import piece_factory.*;
 import pieces.*;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.List;
 
 public class GameManager {
-    private final static List<Piece> STANDARD_GAME_PIECES = new ArrayList<>();
-    static {
-        STANDARD_GAME_PIECES.add(new T_shape());
-        STANDARD_GAME_PIECES.add(new I_shape());
-        STANDARD_GAME_PIECES.add(new L_shape());
-        STANDARD_GAME_PIECES.add(new J_shape());
-        STANDARD_GAME_PIECES.add(new S_shape());
-        STANDARD_GAME_PIECES.add(new Z_shape());
-        STANDARD_GAME_PIECES.add(new O_shape());
-    }
     private static final int PIXELS_PER_SQUARE = 20;
-    private final GameFrame m_gameFrame;
+    private static final PieceFactory STANDARD_PIECE_FACTORY = new PieceFactory();
+    static {
+        STANDARD_PIECE_FACTORY.register(0, new I_pieceCreator());
+        STANDARD_PIECE_FACTORY.register(1, new O_pieceCreator());
+        STANDARD_PIECE_FACTORY.register(2, new T_pieceCreator());
+        STANDARD_PIECE_FACTORY.register(3, new L_pieceCreator());
+        STANDARD_PIECE_FACTORY.register(4, new J_pieceCreator());
+        STANDARD_PIECE_FACTORY.register(5, new S_pieceCreator());
+        STANDARD_PIECE_FACTORY.register(6, new Z_pieceCreator());
+    }
+private final GameFrame m_gameFrame;
     private final GamePanel m_gamePanel;
     private final GamePanel m_nextPiecePanel;
+    private final ScorePanel m_scorePanel;
     private Piece m_currentPiece;
-    private Piece m_nextPiece;
-    private int m_moveTime = 1000;
+    private int m_nextPieceIdx;
+
     public GameManager() {
-        m_gameFrame = new GameFrame(STANDARD_GAME_PIECES);
+        m_gameFrame = new GameFrame();
 
         var gameBoard = new StandardBoard(18, 10);
         m_gamePanel = new GamePanel(gameBoard, PIXELS_PER_SQUARE);
@@ -36,14 +39,21 @@ public class GameManager {
         m_currentPiece = generateNextPiece();
         m_gamePanel.addPiece(m_currentPiece);
         m_gamePanel.drawBoard();
+        m_gamePanel.setVisible(true);
 
-        var nextPieceBoard = new StandardBoard(4, 8);
+        var nextPieceBoard = new StandardBoard(3, 8);
         m_nextPiecePanel = new GamePanel(nextPieceBoard, PIXELS_PER_SQUARE);
         m_nextPiecePanel.setBounds(m_gamePanel.getWidth() + 20, 10, 8 * PIXELS_PER_SQUARE, 4 * PIXELS_PER_SQUARE);
-        m_nextPiece = generateNextPiece();
-        m_nextPiecePanel.addPiece(m_nextPiece);
-        m_nextPiecePanel.moveDown(m_nextPiece);
+        m_nextPieceIdx = new SecureRandom().nextInt(0, StandardPieces.values().length - 1);
+        var nextPiece = STANDARD_PIECE_FACTORY.create(m_nextPieceIdx);
+        m_nextPiecePanel.addPiece(nextPiece);
+        m_nextPiecePanel.moveDown(nextPiece);
         m_nextPiecePanel.drawBoard();
+        m_nextPiecePanel.setVisible(true);
+
+        m_scorePanel = new ScorePanel();
+        m_scorePanel.setBounds(m_gamePanel.getWidth() + 20, m_nextPiecePanel.getHeight() + 20, m_nextPiecePanel.getWidth(), 200);
+        m_scorePanel.setVisible(true);
 
         Action downAction = new DownAction();
         Action upAction = new UpAction();
@@ -59,47 +69,100 @@ public class GameManager {
         m_gamePanel.getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke("LEFT"), "leftAction");
         m_gamePanel.getActionMap().put("leftAction", leftAction);
 
-        m_gameFrame.add(m_gamePanel);
+        m_gameFrame.add(m_scorePanel);
         m_gameFrame.add(m_nextPiecePanel);
+        m_gameFrame.add(m_gamePanel);
         m_gameFrame.setVisible(true);
 
         gameOn();
     }
-
     private void gameOn() {
         boolean isThereStillRoom = true;
         while (isThereStillRoom) {
-            try {
-                Thread.sleep(m_moveTime);
-            }
-            catch (InterruptedException e) {
-                System.out.println("Unable to stop executing thread.");
-                throw new RuntimeException(e);
-            }
-            System.out.println("Current piece starting position = " + m_currentPiece.getCenterPosition().toString());
+            holdPiece();
             if (m_gamePanel.canPieceMoveDown(m_currentPiece)) {
-                System.out.println("Automatic piece down movement");
-                m_gamePanel.moveDown(m_currentPiece);
-                m_gamePanel.repaint();
+                automaticPieceMovement();
             }
             else {
-                m_currentPiece = STANDARD_GAME_PIECES.get(STANDARD_GAME_PIECES.indexOf(m_nextPiece));
-                isThereStillRoom = m_gamePanel.addPiece(m_currentPiece);
-                m_gamePanel.repaint();
+                System.out.println("\nPiece has reached bottom");
+                isThereStillRoom = updateGamePanel();
 
-                m_nextPiecePanel.removeAll();
-                m_nextPiece = generateNextPiece();
-                m_nextPiecePanel.addPiece(m_nextPiece);
-                m_nextPiecePanel.moveDown(m_nextPiece);
-                m_nextPiecePanel.repaint();
+                updateNextPiecePanel();
+
+                m_scorePanel.update(m_gamePanel.getFinishedRows());
+                m_scorePanel.repaint();
             }
         }
-        System.out.println("Game Over :(");
+        displayGameResult();
     }
+
+    private void displayGameResult() {
+        System.out.println("Game Over :(");
+        JLabel gameConclusion = new JLabel();
+        gameConclusion.setBounds(10, 10, 430, 180);
+        gameConclusion.setBackground(new Color(242, 240, 82));
+        gameConclusion.setForeground(Color.RED);
+        gameConclusion.setFont(new Font("MV Boli", Font.BOLD, 20));
+        gameConclusion.setText("Game Over  :(    Lines cleared: " + m_gamePanel.getFinishedRows());
+        gameConclusion.setVerticalTextPosition(JLabel.CENTER);
+        gameConclusion.setHorizontalTextPosition(JLabel.CENTER);
+        gameConclusion.setOpaque(true);
+        gameConclusion.setVisible(true);
+
+        JPanel finalPanel = new JPanel();
+        finalPanel.setBounds( 20, m_gamePanel.getHeight() + 10, 450, 200);
+        finalPanel.add(gameConclusion);
+        finalPanel.setVisible(true);
+
+        JLayeredPane layeredPane = new JLayeredPane();
+        layeredPane.setBounds(0, 0, 500, 500);
+        m_gameFrame.add(layeredPane);
+        layeredPane.add(finalPanel);
+        m_gameFrame.repaint();
+    }
+
+    private void updateNextPiecePanel() {
+        m_nextPiecePanel.clearBoard();
+        m_nextPieceIdx = new SecureRandom().nextInt(0, StandardPieces.values().length - 1);
+        var nextPiece = STANDARD_PIECE_FACTORY.create(m_nextPieceIdx);
+        nextPiece.setCenterPosition(new Position(0, 3));
+        m_nextPiecePanel.addPiece(nextPiece);
+        m_nextPiecePanel.moveDown(nextPiece);
+        m_nextPiecePanel.repaint();
+    }
+
+    private boolean updateGamePanel() {
+        boolean isThereStillRoom;
+        m_gamePanel.removeFinishedRows();
+        m_currentPiece = STANDARD_PIECE_FACTORY.create(m_nextPieceIdx);
+        System.out.println("New piece dispatched : " + m_currentPiece.getClass().getName());
+        m_nextPieceIdx = new SecureRandom().nextInt(0, StandardPieces.values().length - 1);
+        isThereStillRoom = m_gamePanel.addPiece(m_currentPiece);
+        m_gamePanel.repaint();
+        return isThereStillRoom;
+    }
+
+    private void automaticPieceMovement() {
+        System.out.println("Automatic piece down movement");
+        m_gamePanel.moveDown(m_currentPiece);
+        m_gamePanel.repaint();
+    }
+
+    private void holdPiece() {
+        try {
+            final int moveTime = 1000;
+            Thread.sleep(m_gamePanel.getFinishedRows() / 10 >= 9 ? 80 : moveTime - (m_gamePanel.getFinishedRows() / 10) * 100L);
+        }
+        catch (InterruptedException e) {
+            System.out.println("Unable to stop executing thread.");
+            throw new RuntimeException(e);
+        }
+    }
+
     private Piece generateNextPiece() {
         var rand = new SecureRandom();
-        var nextPieceIdx = rand.nextInt(STANDARD_GAME_PIECES.size() - 1);
-        return STANDARD_GAME_PIECES.get(nextPieceIdx);
+        var nextPieceIdx = rand.nextInt(0, StandardPieces.values().length - 1);
+        return STANDARD_PIECE_FACTORY.create(nextPieceIdx);
     }
     public class DownAction extends AbstractAction {
         @Override

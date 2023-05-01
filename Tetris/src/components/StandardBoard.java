@@ -23,7 +23,7 @@ public class StandardBoard implements Board {
         return m_rowsFinished;
     }
 
-    public boolean addPiece(Piece piece) {
+    public boolean addPiece(final Piece piece) {
         Piece newPiece = piece;
         if (newPiece.getCenterPosition() == null) {
             m_startingPosition = new Position(0, m_cells[0].length / 2 - 1);
@@ -31,7 +31,7 @@ public class StandardBoard implements Board {
         }
         for (Position position : newPiece.positions()) {
             if (m_cells[position.row()][position.col()]) {
-                System.out.println("Position occupied : " + position.toString());
+                System.out.println("Position occupied : " + position);
                 return false;
             }
             m_cells[position.row()][position.col()] = true;

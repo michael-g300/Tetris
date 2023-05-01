@@ -16,11 +16,9 @@ public class GamePanel extends JPanel {
     public GamePanel(final Board board, final int pixelsPerSquare) {
         m_pixelsPerSquare = pixelsPerSquare;
         m_board = board;
-        this.setBounds(0, 0, m_board.getCells().length * m_pixelsPerSquare, m_board.getCells()[0].length * m_pixelsPerSquare);
         this.setBackground(FREE_CELL_COLOR);
-        this.setBorder(new LineBorder(Color.BLACK));
+        this.setBorder(new LineBorder(Color.BLACK, 2));
         this.setLayout(null);
-
         this.setVisible(true);
     }
     public void drawBoard() {
@@ -29,7 +27,7 @@ public class GamePanel extends JPanel {
         for (int i = 0 ; i < boardCells.length ; ++i) {
             for (int j = 0 ; j < boardCells[0].length ; ++j) {
                 if (boardCells[i][j]) {
-                    var occupiedCell = new PieceSquare(OCCUPIED_CELL_COLOR);
+                    var occupiedCell = new PieceSquare(OCCUPIED_CELL_COLOR, m_pixelsPerSquare);
                     occupiedCell.setBounds(j * m_pixelsPerSquare, i * m_pixelsPerSquare, m_pixelsPerSquare, m_pixelsPerSquare);
                     this.add(occupiedCell);
                 }
@@ -39,7 +37,7 @@ public class GamePanel extends JPanel {
     public boolean canPieceMoveDown(final Piece piece) {
         m_board.removePiece(piece);
         for (Position position : piece.positions()) {
-            if (m_board.getCells()[position.row()][position.col()] || position.row() >= m_board.getCells().length - 1) {
+            if (position.row() >= m_board.getCells().length - 1 || m_board.getCells()[position.row() + 1][position.col()]) {
                 m_board.addPiece(piece);
                 return false;
             }
@@ -47,11 +45,25 @@ public class GamePanel extends JPanel {
         m_board.addPiece(piece);
         return true;
     }
-    public boolean addPiece(final Piece piece) {
-        return m_board.addPiece(piece);
+    public void clearBoard() {
+        final int rows = m_board.getCells().length;
+        final int cols = m_board.getCells()[0].length;
+        for (int i = 0 ; i < rows ; ++i) {
+            for (int j = 0 ;j < cols ; ++j) {
+                m_board.getCells()[i][j] = false;
+            }
+        }
     }
-    public void removePiece(final Piece piece) {
-        m_board.removePiece(piece);
+    public int getFinishedRows() {
+        return m_board.getFinishedRows();
+    }
+    public boolean addPiece(final Piece piece) {
+        var newPieceAdded = m_board.addPiece(piece);
+        this.repaint();
+        return newPieceAdded;
+    }
+    public void removeFinishedRows() {
+        m_board.checkFinishedRows();
     }
     public boolean moveRight(final Piece piece) {
         var move = m_board.moveRight(piece);

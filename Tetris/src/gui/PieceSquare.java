@@ -4,10 +4,10 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PieceSquare extends JLabel {
-    public PieceSquare(final Color color) {
-        this.setBounds(0, 0, 10, 10);
+    public PieceSquare(final Color color, final int size) {
+        this.setBounds(0, 0, size, size);
         this.setBackground(color);
-        this.setBorder(BorderFactory.createLineBorder(Color.BLACK));
+        this.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
         this.setOpaque(true);
     }
 }
