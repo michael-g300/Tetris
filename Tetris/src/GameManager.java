@@ -9,10 +9,12 @@ import pieces.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.security.SecureRandom;
+import java.util.concurrent.Executors;
 
 public class GameManager {
-    private static final int PIXELS_PER_SQUARE = 20;
+    private static final int PIXELS_PER_SQUARE = 25;
     private static final PieceFactory STANDARD_PIECE_FACTORY = new PieceFactory();
     static {
         STANDARD_PIECE_FACTORY.register(0, new I_pieceCreator());
@@ -81,16 +83,22 @@ private final GameFrame m_gameFrame;
         while (isThereStillRoom) {
             holdPiece();
             if (m_gamePanel.canPieceMoveDown(m_currentPiece)) {
+                m_gamePanel.repaint();
                 automaticPieceMovement();
             }
             else {
-                System.out.println("\nPiece has reached bottom");
+                //System.out.println("\nPiece has reached bottom");
                 isThereStillRoom = updateGamePanel();
 
                 updateNextPiecePanel();
 
                 m_scorePanel.update(m_gamePanel.getFinishedRows());
-                m_scorePanel.repaint();
+
+                var executor = Executors.newFixedThreadPool(2);
+                executor.submit(() -> m_gamePanel.repaint());
+                executor.submit(() -> m_nextPiecePanel.repaint());
+                executor.submit(() -> m_scorePanel.repaint());
+                executor.shutdown();
             }
         }
         displayGameResult();
@@ -99,25 +107,25 @@ private final GameFrame m_gameFrame;
     private void displayGameResult() {
         System.out.println("Game Over :(");
         JLabel gameConclusion = new JLabel();
-        gameConclusion.setBounds(10, 10, 430, 180);
+        gameConclusion.setBounds(10, 10, 450, 350);
         gameConclusion.setBackground(new Color(242, 240, 82));
         gameConclusion.setForeground(Color.RED);
         gameConclusion.setFont(new Font("MV Boli", Font.BOLD, 20));
-        gameConclusion.setText("Game Over  :(    Lines cleared: " + m_gamePanel.getFinishedRows());
+        gameConclusion.setText("Game Over  :(\nLines cleared: " + m_gamePanel.getFinishedRows());
         gameConclusion.setVerticalTextPosition(JLabel.CENTER);
         gameConclusion.setHorizontalTextPosition(JLabel.CENTER);
         gameConclusion.setOpaque(true);
         gameConclusion.setVisible(true);
 
         JPanel finalPanel = new JPanel();
-        finalPanel.setBounds( 20, m_gamePanel.getHeight() + 10, 450, 200);
+        finalPanel.setBounds(10, 10, 475, 375);
         finalPanel.add(gameConclusion);
         finalPanel.setVisible(true);
 
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setBounds(0, 0, 500, 500);
         m_gameFrame.add(layeredPane);
-        layeredPane.add(finalPanel);
+        m_gameFrame.add(finalPanel);
         m_gameFrame.repaint();
     }
 
@@ -128,30 +136,28 @@ private final GameFrame m_gameFrame;
         nextPiece.setCenterPosition(new Position(0, 3));
         m_nextPiecePanel.addPiece(nextPiece);
         m_nextPiecePanel.moveDown(nextPiece);
-        m_nextPiecePanel.repaint();
     }
 
     private boolean updateGamePanel() {
         boolean isThereStillRoom;
         m_gamePanel.removeFinishedRows();
         m_currentPiece = STANDARD_PIECE_FACTORY.create(m_nextPieceIdx);
-        System.out.println("New piece dispatched : " + m_currentPiece.getClass().getName());
+        //System.out.println("New piece dispatched : " + m_currentPiece.getClass().getName());
         m_nextPieceIdx = new SecureRandom().nextInt(0, StandardPieces.values().length - 1);
         isThereStillRoom = m_gamePanel.addPiece(m_currentPiece);
-        m_gamePanel.repaint();
         return isThereStillRoom;
     }
 
     private void automaticPieceMovement() {
-        System.out.println("Automatic piece down movement");
+        //System.out.println("Automatic piece down movement");
         m_gamePanel.moveDown(m_currentPiece);
         m_gamePanel.repaint();
     }
 
     private void holdPiece() {
         try {
-            final int moveTime = 1000;
-            Thread.sleep(m_gamePanel.getFinishedRows() / 10 >= 9 ? 80 : moveTime - (m_gamePanel.getFinishedRows() / 10) * 100L);
+            final int moveTime = 700;
+            Thread.sleep(m_gamePanel.getFinishedRows() / 10 >= 9 ? 100 : moveTime - (m_gamePanel.getFinishedRows() / 10) * 100L);
         }
         catch (InterruptedException e) {
             System.out.println("Unable to stop executing thread.");
@@ -167,7 +173,7 @@ private final GameFrame m_gameFrame;
     public class DownAction extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("down action");
+            //System.out.println("down action");
             m_gamePanel.moveDown(m_currentPiece);
             m_gamePanel.repaint();
         }
@@ -175,7 +181,7 @@ private final GameFrame m_gameFrame;
     public class UpAction extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("up action");
+            //System.out.println("up action");
             m_gamePanel.rotate(m_currentPiece);
             m_gamePanel.repaint();
         }
@@ -183,7 +189,7 @@ private final GameFrame m_gameFrame;
     public class RightAction extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("right action");
+            //System.out.println("right action");
             m_gamePanel.moveRight(m_currentPiece);
             m_gamePanel.repaint();
         }
@@ -191,7 +197,7 @@ private final GameFrame m_gameFrame;
     public class LeftAction extends AbstractAction {
         @Override
         public void actionPerformed(ActionEvent e) {
-            System.out.println("left action");
+            //System.out.println("left action");
             m_gamePanel.moveLeft(m_currentPiece);
             m_gamePanel.repaint();
         }

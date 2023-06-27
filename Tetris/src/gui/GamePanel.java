@@ -10,7 +10,7 @@ import java.awt.*;
 
 public class GamePanel extends JPanel {
     private static final Color FREE_CELL_COLOR = Color.lightGray;
-    private static final Color OCCUPIED_CELL_COLOR = Color.blue;
+    private static final Color OCCUPIED_CELL_COLOR = new Color(5, 104, 176);
     private final Board m_board;
     private final int m_pixelsPerSquare;
     public GamePanel(final Board board, final int pixelsPerSquare) {
@@ -59,7 +59,7 @@ public class GamePanel extends JPanel {
     }
     public boolean addPiece(final Piece piece) {
         var newPieceAdded = m_board.addPiece(piece);
-        this.repaint();
+        drawBoard();
         return newPieceAdded;
     }
     public void removeFinishedRows() {

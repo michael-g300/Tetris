@@ -4,7 +4,7 @@ import javax.swing.*;
 import java.awt.*;
 
 public class GameFrame extends JFrame {
-    private static final int FRAME_SIZE = 500;
+    private static final int FRAME_SIZE = 530;
     public GameFrame() {
         this.setSize(FRAME_SIZE,FRAME_SIZE);
         this.setTitle("TETRIS");

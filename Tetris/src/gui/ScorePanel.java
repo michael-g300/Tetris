@@ -13,7 +13,7 @@ public class ScorePanel extends JPanel {
         this.setBorder(new LineBorder(Color.BLACK, 2));
         this.setLayout(null);
 
-        m_finishedRows = new JLabel("lines       0");
+        m_finishedRows = new JLabel("lines  0");
         m_finishedRows.setVerticalTextPosition(JLabel.TOP);
         m_finishedRows.setBackground(BCKG_COLOR);
         m_finishedRows.setForeground(Color.RED);
@@ -21,7 +21,7 @@ public class ScorePanel extends JPanel {
         m_finishedRows.setFont(new Font("Tahoma", Font.BOLD, 20));
         m_finishedRows.setBounds(20, 20, 100, 50);
 
-        m_level = new JLabel("Level      0");
+        m_level = new JLabel("Level  1");
         m_level.setVerticalTextPosition(JLabel.BOTTOM);
         m_level.setBackground(BCKG_COLOR);
         m_level.setForeground(Color.RED);
@@ -34,7 +34,7 @@ public class ScorePanel extends JPanel {
         this.setVisible(true);
     }
     public void update(final int rowsFinished) {
-        m_finishedRows.setText("lines       " + rowsFinished);
-        m_level.setText("Level      " + rowsFinished / 10);
+        m_finishedRows.setText("lines  " + rowsFinished);
+        m_level.setText("Level  " + (rowsFinished / 10 + 1));
     }
 }
