@@ -4,12 +4,12 @@ import gui.GameFrame;
 import gui.GamePanel;
 import gui.ScorePanel;
 import piece_factory.*;
-import pieces.*;
+import pieces.Piece;
+import pieces.StandardPieces;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.security.SecureRandom;
 import java.util.concurrent.Executors;
 
@@ -25,19 +25,19 @@ public class GameManager {
         STANDARD_PIECE_FACTORY.register(5, new S_pieceCreator());
         STANDARD_PIECE_FACTORY.register(6, new Z_pieceCreator());
     }
-private final GameFrame m_gameFrame;
+    private final GameFrame m_gameFrame;
     private final GamePanel m_gamePanel;
     private final GamePanel m_nextPiecePanel;
     private final ScorePanel m_scorePanel;
     private Piece m_currentPiece;
     private int m_nextPieceIdx;
 
-    public GameManager() {
-        m_gameFrame = new GameFrame();
+    public GameManager(final boolean regularWidth, final int startLevel) {
+        m_gameFrame = new GameFrame(regularWidth);
 
-        var gameBoard = new StandardBoard(18, 10);
+        var gameBoard = new StandardBoard(18, regularWidth ? 10 : 20);
         m_gamePanel = new GamePanel(gameBoard, PIXELS_PER_SQUARE);
-        m_gamePanel.setBounds(10, 10, 10 * PIXELS_PER_SQUARE, 18 * PIXELS_PER_SQUARE);
+        m_gamePanel.setBounds(10, 10, (regularWidth ? 10 : 20) * PIXELS_PER_SQUARE, 18 * PIXELS_PER_SQUARE);
         m_currentPiece = generateNextPiece();
         m_gamePanel.addPiece(m_currentPiece);
         m_gamePanel.drawBoard();
@@ -53,7 +53,7 @@ private final GameFrame m_gameFrame;
         m_nextPiecePanel.drawBoard();
         m_nextPiecePanel.setVisible(true);
 
-        m_scorePanel = new ScorePanel();
+        m_scorePanel = new ScorePanel(startLevel);
         m_scorePanel.setBounds(m_gamePanel.getWidth() + 20, m_nextPiecePanel.getHeight() + 20, m_nextPiecePanel.getWidth(), 200);
         m_scorePanel.setVisible(true);
 
@@ -94,11 +94,12 @@ private final GameFrame m_gameFrame;
 
                 m_scorePanel.update(m_gamePanel.getFinishedRows());
 
-                var executor = Executors.newFixedThreadPool(2);
-                executor.submit(() -> m_gamePanel.repaint());
-                executor.submit(() -> m_nextPiecePanel.repaint());
-                executor.submit(() -> m_scorePanel.repaint());
-                executor.shutdown();
+                try (var executor = Executors.newFixedThreadPool(4)) {
+                    executor.submit(() -> m_gamePanel.repaint());
+                    executor.submit(() -> m_nextPiecePanel.repaint());
+                    executor.submit(() -> m_scorePanel.repaint());
+                    executor.shutdown();
+                }
             }
         }
         displayGameResult();
@@ -107,23 +108,26 @@ private final GameFrame m_gameFrame;
     private void displayGameResult() {
         System.out.println("Game Over :(");
         JLabel gameConclusion = new JLabel();
-        gameConclusion.setBounds(10, 10, 450, 350);
+        gameConclusion.setBounds(10, 10, 470, 350);
         gameConclusion.setBackground(new Color(242, 240, 82));
         gameConclusion.setForeground(Color.RED);
         gameConclusion.setFont(new Font("MV Boli", Font.BOLD, 20));
-        gameConclusion.setText("Game Over  :(\nLines cleared: " + m_gamePanel.getFinishedRows());
+        gameConclusion.setText("Game Over  :(   Lines cleared: " + m_gamePanel.getFinishedRows());
         gameConclusion.setVerticalTextPosition(JLabel.CENTER);
         gameConclusion.setHorizontalTextPosition(JLabel.CENTER);
         gameConclusion.setOpaque(true);
         gameConclusion.setVisible(true);
 
         JPanel finalPanel = new JPanel();
-        finalPanel.setBounds(10, 10, 475, 375);
+        finalPanel.setBounds(10, 10, 490, 375);
         finalPanel.add(gameConclusion);
         finalPanel.setVisible(true);
 
         JLayeredPane layeredPane = new JLayeredPane();
         layeredPane.setBounds(0, 0, 500, 500);
+        m_gameFrame.remove(m_gamePanel);
+        m_gameFrame.remove(m_nextPiecePanel);
+        m_gameFrame.remove(m_scorePanel);
         m_gameFrame.add(layeredPane);
         m_gameFrame.add(finalPanel);
         m_gameFrame.repaint();
@@ -157,10 +161,10 @@ private final GameFrame m_gameFrame;
     private void holdPiece() {
         try {
             final int moveTime = 700;
-            Thread.sleep(m_gamePanel.getFinishedRows() / 10 >= 9 ? 100 : moveTime - (m_gamePanel.getFinishedRows() / 10) * 100L);
+            Thread.sleep((m_gamePanel.getFinishedRows() / 10) >= 7 ? 100 : moveTime - (m_gamePanel.getFinishedRows() / 10) * 100L);
         }
         catch (InterruptedException e) {
-            System.out.println("Unable to stop executing thread.");
+            System.out.println("Unable to stop executing thread :(");
             throw new RuntimeException(e);
         }
     }
