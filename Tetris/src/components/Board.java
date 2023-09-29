@@ -5,6 +5,7 @@ import pieces.Piece;
 public interface Board {
     boolean[][] getCells();
     int getFinishedRows();
+    int getStartingLevel();
     boolean addPiece(Piece piece);
     void removePiece(Piece piece);
     boolean rotate(Piece piece);

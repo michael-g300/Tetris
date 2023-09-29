@@ -16,10 +16,10 @@ public class GameStarter {
     public GameStarter() {
         m_menuFrame = new MenuFrame();
         m_buttonsPanel = new JPanel();
-        m_buttonsPanel.setBounds(10, 10, 495, 470);
+        m_buttonsPanel.setBounds(10, 10, 530, 1000);
 
         m_startButton = new JButton();
-        m_startButton.setBounds(200, 100, 200 ,100);
+        m_startButton.setBounds(100, 100, 200 ,100);
         m_startButton.setText("PLAY");
         m_startButton.setBorder(BorderFactory.createEtchedBorder());
 
@@ -59,6 +59,7 @@ public class GameStarter {
         } );
 
         m_buttonsPanel.add(m_startButton);
+        m_startButton.setLocation(300, 300);
         m_buttonsPanel.add(m_levelPicker);
         m_buttonsPanel.add(levelLabel);
         m_buttonsPanel.add(m_regularWidth);

@@ -37,6 +37,6 @@ public class ScorePanel extends JPanel {
     }
     public void update(final int rowsFinished) {
         m_finishedRows.setText("lines  " + rowsFinished);
-        m_level.setText("Level  " + ((rowsFinished + m_startLevel) / 10 + 1));
+        m_level.setText("Level  " + ((rowsFinished) / 10 + m_startLevel));
     }
 }

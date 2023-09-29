@@ -9,10 +9,14 @@ public class StandardBoard implements Board {
     private static final int MAX_NUM_OF_PIECE_ROTATIONS = 4;
     private final boolean [][] m_cells;
     private Position m_startingPosition;
-    private int m_rowsFinished = 0;
-    public StandardBoard(final int rows, final int columns) {
+    private int m_rowsFinished;
+    private int m_startingLevel = 1;
+    public StandardBoard(final int rows, final int columns, final int startingLevel) {
         m_cells = new boolean[rows][columns];
         m_startingPosition = new Position(0, columns / 2 - 1);
+        m_rowsFinished = 0;
+        m_startingLevel = startingLevel;
+        System.out.println("Starting at level - " + (m_rowsFinished + 1));
     }
     public boolean[][] getCells() {
         return m_cells;
@@ -21,6 +25,9 @@ public class StandardBoard implements Board {
     @Override
     public int getFinishedRows() {
         return m_rowsFinished;
+    }
+    public int getStartingLevel() {
+        return m_startingLevel;
     }
 
     public boolean addPiece(final Piece piece) {

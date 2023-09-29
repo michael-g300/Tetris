@@ -21,7 +21,7 @@ public class GamePanel extends JPanel {
         this.setLayout(null);
         this.setVisible(true);
     }
-    public void drawBoard() {
+    public void drawBoard() {   //instead of creating new labels each loop, save them and move them each time
         this.removeAll();
         final boolean[][] boardCells = m_board.getCells();
         for (int i = 0 ; i < boardCells.length ; ++i) {
@@ -56,6 +56,9 @@ public class GamePanel extends JPanel {
     }
     public int getFinishedRows() {
         return m_board.getFinishedRows();
+    }
+    public int getCurrentLevel() {
+        return m_board.getStartingLevel() + m_board.getFinishedRows() / 10;
     }
     public boolean addPiece(final Piece piece) {
         var newPieceAdded = m_board.addPiece(piece);

@@ -7,10 +7,6 @@ import java.nio.channels.SeekableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class HighScoreTable {
     private static final String FILE_PATH = "./High_Scores.txt";
@@ -19,11 +15,13 @@ public class HighScoreTable {
     private static final int MAX_SCORES = 10;
     private final Path m_highscoreFilePath;
     private final PlayerScore[] m_highScores = new PlayerScore[MAX_SCORES];
-    private SeekableByteChannel m_channel;
     public HighScoreTable() {
         m_highscoreFilePath = Paths.get(FILE_PATH);
         createHighScoreFile();
         readFromFile();
+    }
+    public PlayerScore[] getPlayersScores() {
+        return m_highScores;
     }
 
     private void readFromFile() {
@@ -33,6 +31,9 @@ public class HighScoreTable {
             while (line != null) {
                 System.out.println(line);
                 final int separatorPosition = line.indexOf(NAME_SCORE_SEPARATOR);
+                if (separatorPosition <= 0) {
+                    break;
+                }
                 final String playerName = line.substring(0, separatorPosition);
                 final int playerScore = Integer.valueOf(line.substring(separatorPosition + 1));
                 insertPlayerIntoTable(new PlayerScore(playerName, playerScore));
@@ -45,20 +46,23 @@ public class HighScoreTable {
         writeToFile();
     }
 
-    private void insertPlayerIntoTable(final PlayerScore newPlayer) {
+    private boolean insertPlayerIntoTable(final PlayerScore newPlayer) {
         for (int i = 0 ; i < m_highScores.length ; ++i) {
             if (m_highScores[i] == null) {
                 m_highScores[i] = newPlayer;
-                break;
+                writeToFile();
+                return true;
             }
             if (m_highScores[i].score() < newPlayer.score()) {
                 for (int j = m_highScores.length - 1 ; j > i ; --j) {
                     m_highScores[j] = m_highScores[j - 1];
                 }
                 m_highScores[i] = newPlayer;
-                break;
+                writeToFile();
+                return true;
             }
         }
+        return false;
     }
     private void writeToFile() {
         StringBuilder updatedFileContent = new StringBuilder();
@@ -79,8 +83,14 @@ public class HighScoreTable {
             throw new RuntimeException(e);
         }
     }
-    public void updateScores(final String playerName, final int playerScore) {
-        insertPlayerIntoTable(new PlayerScore(playerName, playerScore));
+    public boolean updateScores(final String playerName, final int playerScore) {
+        return insertPlayerIntoTable(new PlayerScore(playerName, playerScore));
+    }
+    public int getLowestHighScore() {
+        if (m_highScores[m_highScores.length - 1] != null) {
+            return m_highScores[m_highScores.length - 1].score();
+        }
+        return 0;
     }
     private void createHighScoreFile() {
         if (Files.exists(m_highscoreFilePath)) {
